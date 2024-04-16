@@ -1,4 +1,5 @@
-const User = require('../schema/Auth');
+const User = require('../schema/AuthSchema');
+
 exports.register = async (req, res) => {
   try{
     const user = new User(req.body);
