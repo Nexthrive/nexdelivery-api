@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const User = require('../schema/AuthSchema');
 const jwt = require('jsonwebtoken');
+const error = require('../../middleware/middleware');
 
 exports.register = async (req, res) => {
   try{
@@ -26,25 +27,33 @@ exports.register = async (req, res) => {
     await user.save();
     res.status(201).json({message: 'User created successfully'})
   }catch(err){
-    res.status(500).json({message: err.message});
+    error(err, req, res, next);
   }
 };
 
-exports.Login = async (req,res) => {
-  try{
+exports.Login = async (req, res) => {
+  try {
     const {email, password} = req.body;
     const user = await User.findOne({email});
-    if(!user){
-      return res.status(404).json({message: 'User not found'});
-    }else{
-      const token = jwt.sign({
-        nama: user.nama,
-        id: user._id
-      }, process.env.SECRET_KEY, {expiresIn: '1h'});
-      return res.status(200).json({message: 'Login success', token});
+    if (!user) {
+      throw new Error('User not found'); 
     }
-  }catch(err){
-    res.status(500).json({message: err.message});
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      throw new Error('Invalid password'); 
+    }
+
+    const token = jwt.sign({
+      id: user._id,
+      email: user.email
+    }, process.env.SECRET_KEY, {expiresIn: '1h'});
+
+    return res.status(200).json({message: 'Login success', token});
+  } catch (err) {
+    console.error('Error occurred:', err.message);
+    console.error('Error stack:', err.stack);
+    return res.status(500).json({message: 'Internal server error', error: err.message});
   }
 };
 
