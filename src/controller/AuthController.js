@@ -3,7 +3,7 @@ const User = require("../schema/AuthSchema");
 const jwt = require("jsonwebtoken");
 const error = require("../../middleware/middleware");
 
-exports.register = async (req, res) => {
+exports.register = async (req, res, next) => {
   try {
     const { password, ...rest } = req.body;
 
@@ -46,7 +46,7 @@ exports.register = async (req, res) => {
   }
 };
 
-exports.Login = async (req, res) => {
+exports.Login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
@@ -78,7 +78,7 @@ exports.Login = async (req, res) => {
   }
 };
 
-exports.getAllUsers = async (req, res) => {
+exports.getAllUsers = async (req, res, next) => {
   try {
     const users = await User.find();
     if (!users || users.length === 0) {
@@ -90,7 +90,7 @@ exports.getAllUsers = async (req, res) => {
   }
 };
 
-exports.getAllKurir = async (req, res) => {
+exports.getAllKurir = async (req, res, next) => {
   try {
     const kurir = await User.find({
       role: "courier",
@@ -106,7 +106,7 @@ exports.getAllKurir = async (req, res) => {
   }
 };
 
-exports.getUserById = async (req, res) => {
+exports.getUserById = async (req, res, next) => {
   try {
     const userId = req.params.id;
     const user = await User.findById(userId);
@@ -121,7 +121,7 @@ exports.getUserById = async (req, res) => {
   }
 };
 
-exports.Update = async (req, res) => {
+exports.Update = async (req, res, next) => {
   try {
     const userId = req.params.id;
     const newData = req.body;
@@ -150,7 +150,7 @@ exports.Update = async (req, res) => {
   }
 };
 
-exports.updatePassword = async (req, res) => {
+exports.updatePassword = async (req, res, next) => {
   try {
     const userId = req.params.id;
     const { oldPassword, newPassword } = req.body;
