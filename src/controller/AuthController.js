@@ -51,34 +51,27 @@ exports.register = async (req, res) => {
 
 exports.Login = async (req, res) => {
   try {
-    const { email, password } = req.body;
-    const user = await User.findOne({
-      email,
-    });
+    const {email, password} = req.body;
+    const user = await User.findOne({email});
     if (!user) {
-      return res.status(404).json({
-        message: "User not found",
-      });
-    } else {
-      const token = jwt.sign(
-        {
-          nama: user.nama,
-          id: user._id,
-        },
-        process.env.SECRET_KEY,
-        {
-          expiresIn: "1h",
-        }
-      );
-      return res.status(200).json({
-        message: "Login success",
-        token,
-      });
+      throw new Error('User not found'); 
     }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      throw new Error('Invalid password'); 
+    }
+
+    const token = jwt.sign({
+      id: user._id,
+      email: user.email
+    }, process.env.SECRET_KEY, {expiresIn: '1h'});
+
+    return res.status(200).json({message: 'Login success', token});
   } catch (err) {
-    res.status(500).json({
-      message: err.message,
-    });
+    console.error('Error occurred:', err.message);
+    console.error('Error stack:', err.stack);
+    return res.status(500).json({message: 'Internal server error', error: err.message});
   }
 };
 
