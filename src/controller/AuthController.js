@@ -1,9 +1,9 @@
-const bcrypt = require('bcrypt');
-const User = require('../schema/AuthSchema');
-const jwt = require('jsonwebtoken');
-const error = require('../../middleware/middleware');
+const bcrypt = require("bcrypt");
+const User = require("../schema/AuthSchema");
+const jwt = require("jsonwebtoken");
+const error = require("../../middleware/middleware");
 
-exports.register = async (req, res) => {
+exports.register = async (req, res, next) => {
   try {
     const { password, ...rest } = req.body;
 
@@ -40,115 +40,103 @@ exports.register = async (req, res) => {
       password: hashPass,
     });
     await user.save();
-    res.status(201).json({message: 'User created successfully'})
-  }catch(err){
+    res.status(201).json({ message: "User created successfully" });
+  } catch (err) {
     error(err, req, res, next);
   }
 };
 
-exports.Login = async (req, res) => {
+exports.Login = async (req, res, next) => {
   try {
-    const {email, password} = req.body;
-    const user = await User.findOne({email});
+    const { email, password } = req.body;
+    const user = await User.findOne({ email });
     if (!user) {
-      throw new Error('User not found'); 
+      throw new Error("User not found");
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      throw new Error('Invalid password'); 
+      throw new Error("Invalid password");
     }
 
-    const token = jwt.sign({
-      id: user._id,
-      email: user.email
-    }, process.env.SECRET_KEY, {expiresIn: '1h'});
+    const token = jwt.sign(
+      {
+        id: user._id,
+        email: user.email,
+      },
+      process.env.SECRET_KEY,
+      { expiresIn: "1h" }
+    );
 
-    return res.status(200).json({message: 'Login success', token});
+    return res.status(200).json({ message: "Login success", token });
   } catch (err) {
-    console.error('Error occurred:', err.message);
-    console.error('Error stack:', err.stack);
-    return res.status(500).json({message: 'Internal server error', error: err.message});
+    console.error("Error occurred:", err.message);
+    console.error("Error stack:", err.stack);
+    return res
+      .status(500)
+      .json({ message: "Internal server error", error: err.message });
   }
 };
 
-exports.getAllUsers = async (req, res) => {
+exports.getAllUsers = async (req, res, next) => {
   try {
     const users = await User.find();
     if (!users || users.length === 0) {
-      return res.status(404).json({
-        message: "No users found",
-      });
+      throw new Error("No users found");
     }
     res.status(200).json(users);
   } catch (err) {
-    res.status(500).json({
-      message: err.message,
-    });
+    error(err, req, res, next);
   }
 };
 
-exports.getAllKurir= async (req, res) => {
+exports.getAllKurir = async (req, res, next) => {
   try {
     const kurir = await User.find({
       role: "courier",
     });
 
     if (!kurir || kurir.length === 0) {
-      return res.status(404).json({
-        message: "No kurir found",
-      });
+      throw new Error("No kurir found");
     }
 
     res.status(200).json(kurir);
   } catch (err) {
-    res.status(500).json({
-      message: err.message,
-    });
+    error(err, req, res, next);
   }
 };
 
-exports.getUserById = async (req, res) => {
+exports.getUserById = async (req, res, next) => {
   try {
     const userId = req.params.id;
     const user = await User.findById(userId);
 
     if (!user) {
-      return res.status(404).json({
-        message: "User not found",
-      });
+      throw new Error("User not found");
     }
 
     res.status(200).json(user);
   } catch (err) {
-    res.status(500).json({
-      message: err.message,
-    });
+    error(err, req, res, next);
   }
 };
 
-exports.Update = async (req, res) => {
+exports.Update = async (req, res, next) => {
   try {
     const userId = req.params.id;
     const newData = req.body;
 
     if (!userId || !newData) {
-      return res.status(400).json({
-        message: "Invalid request",
-      });
+      throw new Error("Invalid Request");
     }
 
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({
-        message: "User not found",
-      });
+      throw new Error("User not found");
     }
 
     if (newData.password) {
-      return res.status(400).json({
-        message: "Password cannot be updated directly",
-      });
+      throw new Error("Password cannot be updated directly");
     }
 
     delete newData.password;
@@ -156,56 +144,36 @@ exports.Update = async (req, res) => {
 
     await user.save();
 
-    res.status(200).json({
-      message: "User updated successfully",
-      user,
-    });
+    res.status(200).json({ message: "User updated successfully", user });
   } catch (err) {
-    res.status(500).json({
-      message: err.message,
-    });
+    error(err, req, res, next);
   }
 };
 
-exports.updatePassword = async (req, res) => {
+exports.updatePassword = async (req, res, next) => {
   try {
     const userId = req.params.id;
     const { oldPassword, newPassword } = req.body;
 
     if (!userId || !oldPassword || !newPassword) {
-      return res.status(400).json({
-        message: "Invalid request. Please provide userId, oldPassword, and newPassword.",
-      });
+      throw new Error("Invalid Request");
     }
 
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({
-        message: "User not found",
-      });
+      throw new Error("User not found");
     }
 
-    // Validate old password
     const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
     if (!isPasswordValid) {
-      return res.status(400).json({
-        message: "Invalid old password",
-      });
+      throw new Error("Invalid old_password");
     }
 
-    // Hash new password
     const hashNewPassword = await bcrypt.hash(newPassword, 10);
-
-    // Update password in database
     user.password = hashNewPassword;
     await user.save();
-
-    res.status(200).json({
-      message: "Password updated successfully",
-    });
+    res.status(200).json({ message: "Password updated successfully" });
   } catch (err) {
-    res.status(500).json({
-      message: err.message,
-    });
+    error(err, req, res, next);
   }
 };
