@@ -70,11 +70,9 @@ exports.Login = async (req, res, next) => {
 
     return res.status(200).json({ message: "Login success", token });
   } catch (err) {
-    console.error("Error occurred:", err.message);
-    console.error("Error stack:", err.stack);
-    return res
-      .status(500)
-      .json({ message: "Internal server error", error: err.message });
+    console.error('Error occurred:', err.message);
+    console.error('Error stack:', err.stack);
+    error(err, req, res, next);
   }
 };
 

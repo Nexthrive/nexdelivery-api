@@ -16,7 +16,11 @@ const GudangSchema = mongoose.Schema({
   barang: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Barang'
-  }]
+  }],
+  pengantaran: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Pengantaran'
+  }] 
 });
 
 module.exports = mongoose.model('Gudang', GudangSchema);
