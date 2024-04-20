@@ -72,9 +72,7 @@ exports.Login = async (req, res, next) => {
   } catch (err) {
     console.error("Error occurred:", err.message);
     console.error("Error stack:", err.stack);
-    return res
-      .status(500)
-      .json({ message: "Internal server error", error: err.message });
+    error(err,req,res,next)
   }
 };
 
@@ -130,7 +128,9 @@ exports.Update = async (req, res, next) => {
       throw new Error("Invalid Request");
     }
 
-    const user = await User.findById(userId);
+    
+
+    const user = await User.findById(decoded.id);
     if (!user) {
       throw new Error("User not found");
     }
@@ -156,6 +156,12 @@ exports.updatePassword = async (req, res, next) => {
     const { oldPassword, newPassword } = req.body;
 
     if (!userId || !oldPassword || !newPassword) {
+      throw new Error("Invalid Request");
+    }
+
+    const token = req.headers.authorization.split(' ')[1];
+    const decoded = jwt.verify(token, process.env.SECRET_KEY);
+    if(decoded.id !== userId){
       throw new Error("Invalid Request");
     }
 
